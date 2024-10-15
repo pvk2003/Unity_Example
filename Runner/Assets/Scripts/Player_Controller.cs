@@ -7,81 +7,67 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] Transform center_Pos;
     [SerializeField] Transform left_Pos;
     [SerializeField] Transform right_Pos;
-    
-    int currunt_Pos = 0;
+
+    int current_Pos = 0; // Fixed typo
     public float side_speed;
-
     public float running_speed;
-
     public float jump_Force;
 
     [SerializeField] Rigidbody rb;
-    // Start is called before the first frame update
+    bool isGameStarted = false;
+
+    [SerializeField] Animator player_Animator;
+
     void Start()
     {
-        currunt_Pos = 0;
+        isGameStarted = false;
+        current_Pos = 0;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + running_speed * Time.deltaTime);
-        // Handle input to change the current position
-        if (currunt_Pos == 0)
+        if (!isGameStarted)
         {
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if (Input.GetMouseButtonDown(0))
             {
-                currunt_Pos = 1;
-            }
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                currunt_Pos = 2;
-            }
-        }
-        else if (currunt_Pos == 1)
-        {
-            if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                currunt_Pos = 0;
-            }
-        }
-        else if (currunt_Pos == 2)
-        {
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                currunt_Pos = 0;
+                Debug.Log("Game is started");
+                isGameStarted = true;
+                player_Animator.SetInteger("isRunning", 1); // Chuyển đổi trạng thái
+
             }
         }
 
-        // Move the player to the appropriate position
-        if (currunt_Pos == 0)
-        {
-            if (Vector3.Distance(transform.position, new Vector3(center_Pos.position.x, transform.position.y, transform.position.z)) >= 0.1f)
-            {
-                Vector3 dir = new Vector3(center_Pos.position.x, transform.position.y, transform.position.z) - transform.position;
-                transform.Translate(dir.normalized * side_speed * Time.deltaTime, Space.World);
-            }
-        }
-        else if (currunt_Pos == 1)
-        {
-            if (Vector3.Distance(transform.position, new Vector3(left_Pos.position.x, transform.position.y, transform.position.z)) >= 0.1f)
-            {
-                Vector3 dir = new Vector3(left_Pos.position.x, transform.position.y, transform.position.z) - transform.position;
-                transform.Translate(dir.normalized * side_speed * Time.deltaTime, Space.World);
-            }
-        }
-        else if (currunt_Pos == 2)
-        {
-            if (Vector3.Distance(transform.position, new Vector3(right_Pos.position.x, transform.position.y, transform.position.z)) >= 0.1f)
-            {
-                Vector3 dir = new Vector3(right_Pos.position.x, transform.position.y, transform.position.z) - transform.position;
-                transform.Translate(dir.normalized * side_speed * Time.deltaTime, Space.World);
-            }
-        }
 
-        if(Input.GetKeyDown(KeyCode.Space)){
-            // rb.AddForce(Vector3.up * jump_Force);
-            rb.velocity = Vector3.up * jump_Force;
+        if (isGameStarted)
+        {
+            // Player runs forward
+            transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + running_speed * Time.deltaTime);
+
+            // Handle input to change the current position
+            if (current_Pos == 0)
+            {
+                if (Input.GetKeyDown(KeyCode.LeftArrow)) current_Pos = 1;
+                else if (Input.GetKeyDown(KeyCode.RightArrow)) current_Pos = 2;
+            }
+            else if (current_Pos == 1 && Input.GetKeyDown(KeyCode.RightArrow)) current_Pos = 0;
+            else if (current_Pos == 2 && Input.GetKeyDown(KeyCode.LeftArrow)) current_Pos = 0;
+
+            // Move the player to the appropriate position
+            Vector3 targetPosition = transform.position;
+            if (current_Pos == 0) targetPosition = new Vector3(center_Pos.position.x, transform.position.y, transform.position.z);
+            else if (current_Pos == 1) targetPosition = new Vector3(left_Pos.position.x, transform.position.y, transform.position.z);
+            else if (current_Pos == 2) targetPosition = new Vector3(right_Pos.position.x, transform.position.y, transform.position.z);
+
+            if (Vector3.Distance(transform.position, targetPosition) >= 0.1f)
+            {
+                transform.position = Vector3.Lerp(transform.position, targetPosition, side_speed * Time.deltaTime);
+            }
+
+            // Jump
+            if (rb != null && Input.GetKeyDown(KeyCode.Space))
+            {
+                rb.velocity = Vector3.up * jump_Force;
+            }
         }
     }
 }
